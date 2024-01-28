@@ -16,7 +16,7 @@ This is a falling sand simulator created using [SDL2](https://www.libsdl.org/). 
 
 ### How to Compile and Run
 
-In the repository you should find a run.sh script. If you cannot run it copy and paste the commands inside it in the cmd and it should be able to run.
+To compile and run it run this command in you cmd "g++ main.cpp -Iinclude -Llib -lmingw32 -lSDL2main -lSDL2 -o falling_sand && ./falling_sand"
 
 ### Dependencies
 
