@@ -21,3 +21,4 @@ To compile and run it run this command in you cmd "g++ main.cpp -Iinclude -Llib 
 ### Dependencies
 
 - **SDL2:** This project is built using the SDL2 library. Make sure SDL2 is installed and properly configured in your development environment.
+- **MinGW** This project uses "g++" to compile.
