@@ -11,17 +11,16 @@ const int WINDOW_WIDTH=800,WINDOW_HEIGHT=600;
 const int WIDTH=WINDOW_WIDTH/TILE_SIZE, HEIGHT=WINDOW_HEIGHT/TILE_SIZE;
 const float RAD=8;
 
-const int TILES_PER_CLICK=20;
+const int TILES_PER_CLICK=5;
 const int COLORS_SIZE=7;
 
 struct tile{
     SDL_Rect rect;
     SDL_Color c;
-    int state;
-    float move_interval, timer;
+    int state, speed;
 };
 
-void fill_tiles(vector<vector<tile>> &tiles);
+void fill_tiles(vector<vector<tile>> &tiles, bool first);
 bool is_inside_circle(int mx, int my, int x, int y);
 bool get_new_tile(tile& lhs, const tile& rhs);
 SDL_Color blendColors(SDL_Color color1, SDL_Color color2, float t);
@@ -60,7 +59,7 @@ int main(int argc, char **argv){
     SDL_Renderer *rend=SDL_CreateRenderer(win, -1, 0);
 
     SDL_SetRenderDrawColor(rend, 0, 0, 0, 255);
-    fill_tiles(tile_map);
+    fill_tiles(tile_map, 1);
 
     auto gradient_colors=get_gradients();
     vector<vector<tile>> new_tile_map;
@@ -68,7 +67,7 @@ int main(int argc, char **argv){
     bool should_close=0;
 
     while(!should_close){
-        fill_tiles(new_tile_map);
+        fill_tiles(new_tile_map, 0);
 
         while(SDL_PollEvent(&e)){
             if(e.type==SDL_QUIT)should_close=1;
@@ -84,12 +83,12 @@ int main(int argc, char **argv){
                             if(is_inside_circle(mx, my, j, i)&&!tile_map[i][j].state){
                                 tile_map[i][j].state=1;
                                 tile_map[i][j].c=gradient_colors[color_ind%gradient_colors.size()];
+                                tile_map[i][j].speed=rand()%5+4;
                             }
                         }
                     }
                 }
-                color_cnt++;
-                if(color_cnt%10==0)color_ind++;
+                if(!(color_cnt++%10))color_ind++;
             }
         }
 
@@ -99,28 +98,24 @@ int main(int argc, char **argv){
         auto delta=delta_time(last_tick_t);
         for(int i=0; i<HEIGHT; i++){
             for(int j=0; j<WIDTH; j++){
-                tile_map[i][j].timer+=0.1+delta;
-                // SDL_Log("Timer: %f", tile_map[i][j].timer);
-
-                if(tile_map[i][j].timer>=tile_map[i][j].move_interval && tile_map[i][j].state){
-                    new_tile_map[i][j].c=tile_map[i][j].c;
-                    if(i+1==HEIGHT || (tile_map[i+1][j].state && tile_map[i+1][j+1].state && tile_map[i+1][j-1].state)){
+                if(tile_map[i][j].state){
+                    int offset=tile_map[i][j].speed;
+                    if(i+offset>=HEIGHT || (tile_map[i+offset][j].state && tile_map[i+offset][j+1].state && tile_map[i+offset][j-1].state)){
                         get_new_tile(new_tile_map[i][j], tile_map[i][j]);
                         continue;
                     }
-
                     bool is_placed=0;
-                    if(!tile_map[i+1][j].state){
-                        is_placed=get_new_tile(new_tile_map[i+1][j], tile_map[i][j]);
+                    if(!tile_map[i+offset][j].state){
+                        is_placed=get_new_tile(new_tile_map[i+offset][j], tile_map[i][j]);
                     }
                     else{
                         int dir=rand()%2==0?-1:1;
-                        if(0<=j+dir && j+dir<WIDTH && !tile_map[i+1][j+dir].state){
-                            is_placed=get_new_tile(new_tile_map[i+1][j+dir], tile_map[i][j]);
+                        if(0<=j+dir && j+dir<WIDTH && !tile_map[i+offset][j+dir].state){
+                            is_placed=get_new_tile(new_tile_map[i+offset][j+dir], tile_map[i][j]);
                         }else{
                             dir=dir==-1?1:-1;
-                            if(0<=j+dir && j+dir<WIDTH && !tile_map[i+1][j+dir].state){
-                                is_placed=get_new_tile(new_tile_map[i+1][j+dir], tile_map[i][j]);is_placed=1;
+                            if(0<=j+dir && j+dir<WIDTH && !tile_map[i+offset][j+dir].state){
+                                is_placed=get_new_tile(new_tile_map[i+offset][j+dir], tile_map[i][j]);is_placed=1;
                             }
                         }
                     } 
@@ -128,8 +123,6 @@ int main(int argc, char **argv){
                     if(!is_placed){
                         get_new_tile(new_tile_map[i][j], tile_map[i][j]);
                     }
-
-                    tile_map[i][j].timer=0;
                 }
             }
         }
@@ -158,13 +151,13 @@ int main(int argc, char **argv){
     return 0;
 }
 
-void fill_tiles(vector<vector<tile>> &tiles){
+void fill_tiles(vector<vector<tile>> &tiles, bool first){
     for(int i=0; i<HEIGHT; i++){
         tiles.push_back({});
         for(int j=0; j<WIDTH; j++){
             tile t;
             t.rect={.x=j*TILE_SIZE, .y=i*TILE_SIZE, .w=TILE_SIZE, .h=TILE_SIZE};
-            t.state=0, t.timer=0, t.move_interval=0.+(float)rand() / RAND_MAX * (0.5 - 0.);
+            t.state=0, t.speed=0;
             tiles.back().push_back(t);
         }
     }
@@ -203,8 +196,7 @@ bool is_inside_circle(int mx, int my, int x, int y){
 bool get_new_tile(tile& lhs, const tile& rhs){
     lhs.state=rhs.state;
     lhs.c=rhs.c;
-    lhs.move_interval=rhs.move_interval;
-    lhs.timer=rhs.timer;
+    lhs.speed=rhs.speed;
     return 1;
 }
 
