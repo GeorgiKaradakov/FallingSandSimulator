@@ -12,7 +12,6 @@ This is a falling sand simulator created using [SDL2](https://www.libsdl.org/). 
 ### Upcoming Features
 
 - **Clearing Mechanism:** A future update will add the ability to clear the window of sand, allowing users to reset or clean their canvas as they experiment with different patterns and behaviors.
-- **Variable Speeds:** To enhance realism and visual interest, sand particles will eventually fall at different speeds, simulating a more natural and diverse falling effect.
 
 ### How to Compile and Run
 
