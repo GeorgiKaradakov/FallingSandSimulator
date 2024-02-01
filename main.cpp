@@ -1,17 +1,15 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
-#include <string>
-#include <sstream>
 #include <SDL2/SDL.h>
 using namespace std;
 
 const int TILE_SIZE=4;//TODO: optimize the code to work smoothly with TILE_SIZE=1
 const int WINDOW_WIDTH=800,WINDOW_HEIGHT=600;
 const int WIDTH=WINDOW_WIDTH/TILE_SIZE, HEIGHT=WINDOW_HEIGHT/TILE_SIZE;
-const float RAD=4;
+const float RAD=6.5;
 
-const int TILES_PER_CLICK=5;
+const int TILES_PER_CLICK=6;
 const int COLORS_SIZE=7;
 
 struct tile{
@@ -20,13 +18,6 @@ struct tile{
     int state, speed;
 };
 
-void fill_tiles(vector<vector<tile>> &tiles, bool first);
-bool is_inside_circle(int mx, int my, int x, int y);
-bool get_new_tile(tile& lhs, const tile& rhs);
-SDL_Color blendColors(SDL_Color color1, SDL_Color color2, float t);
-vector<SDL_Color> get_gradients();
-
-Uint64 last_tick_t=0;
 int color_ind=0;
 vector<vector<tile>> tile_map;
  SDL_Color colors[COLORS_SIZE] = {
@@ -38,6 +29,12 @@ vector<vector<tile>> tile_map;
     {75, 0, 130, 255},    // Indigo
     {148, 0, 211, 255}    // Violet
 };
+
+void fill_tiles(vector<vector<tile>> &tiles);
+bool is_inside_circle(int mx, int my, int x, int y);
+bool get_new_tile(tile& lhs, const tile& rhs);
+SDL_Color blendColors(SDL_Color color1, SDL_Color color2, float t);
+vector<SDL_Color> get_gradients();
 
 int main(int argc, char **argv){
     srand(time(NULL));
@@ -58,18 +55,27 @@ int main(int argc, char **argv){
     SDL_Renderer *rend=SDL_CreateRenderer(win, -1, 0);
 
     SDL_SetRenderDrawColor(rend, 0, 0, 0, 255);
-    fill_tiles(tile_map, 1);
+    fill_tiles(tile_map);
 
-    auto gradient_colors=get_gradients();
+    vector<SDL_Color> gradient_colors=get_gradients();
     vector<vector<tile>> new_tile_map;
-    int mx, my, color_cnt=0;
-    bool should_close=0;
+    int color_cnt=0;
+    bool should_close=0, space_pressed=0, esc_pressed=0;
 
     while(!should_close){
-        fill_tiles(new_tile_map, 0);
+        fill_tiles(new_tile_map);
 
         while(SDL_PollEvent(&e)){
             if(e.type==SDL_QUIT)should_close=1;
+            else if(e.type==SDL_KEYDOWN){
+                if(e.key.keysym.sym==SDLK_SPACE)
+                    space_pressed=1;
+                else if(e.key.keysym.sym==SDLK_ESCAPE)
+                    should_close=1;
+            }else if(e.type==SDL_KEYUP){
+                if(e.key.keysym.sym==SDLK_SPACE)
+                    space_pressed=0;
+            }
 
             int mx, my;
             Uint32 m_state=SDL_GetMouseState(&mx, &my);
@@ -91,6 +97,12 @@ int main(int argc, char **argv){
             }
         }
 
+        if(space_pressed){
+            tile_map.clear();
+            fill_tiles(tile_map);
+            continue;
+        }
+
         SDL_SetRenderDrawColor(rend, 0, 0, 0, 255);
         SDL_RenderClear(rend);
 
@@ -98,13 +110,15 @@ int main(int argc, char **argv){
             for(int j=0; j<WIDTH; j++){
                 if(tile_map[i][j].state){
                     int offset=tile_map[i][j].speed;
-                    while(i+offset>=HEIGHT || tile_map[i+offset][j].state)offset--;//when the i+offset touches an already placed cell it shrinks till the current cell caaannot touch it
+                    while(i+offset>=HEIGHT || tile_map[i+offset][j].state)offset--;//when the i+offset touches an already placed cell it shrinks till the current cell 
+                                                                                   //cannot touch it
                     if(offset<=0)offset=1;//cap the offset
 
                     if(i+offset>=HEIGHT || (tile_map[i+offset][j].state && tile_map[i+offset][j+1==WIDTH?j:j+1].state && tile_map[i+offset][j-1==WIDTH?j:j-1].state)){
                         get_new_tile(new_tile_map[i][j], tile_map[i][j]);
                         continue;
                     }
+
                     bool is_placed=0;
                     if(!tile_map[i+offset][j].state){
                         is_placed=get_new_tile(new_tile_map[i+offset][j], tile_map[i][j]);
@@ -121,9 +135,8 @@ int main(int argc, char **argv){
                         }
                     } 
 
-                    if(!is_placed){
+                    if(!is_placed)
                         get_new_tile(new_tile_map[i][j], tile_map[i][j]);
-                    }
                 }
             }
         }
@@ -152,7 +165,7 @@ int main(int argc, char **argv){
     return 0;
 }
 
-void fill_tiles(vector<vector<tile>> &tiles, bool first){
+void fill_tiles(vector<vector<tile>> &tiles){
     for(int i=0; i<HEIGHT; i++){
         tiles.push_back({});
         for(int j=0; j<WIDTH; j++){
@@ -189,7 +202,7 @@ vector<SDL_Color> get_gradients(){
 }
 
 bool is_inside_circle(int mx, int my, int x, int y){
-    float eq=(float)pow((x-mx), 2)+(float)pow((y-my),2);
+    float eq=(float)pow((x-mx),2)+(float)pow((y-my),2);
 
     return sqrt(eq)<=RAD;
 }
