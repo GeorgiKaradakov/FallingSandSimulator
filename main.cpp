@@ -6,10 +6,10 @@
 #include <SDL2/SDL.h>
 using namespace std;
 
-const int TILE_SIZE=3;
+const int TILE_SIZE=4;//TODO: optimize the code to work smoothly with TILE_SIZE=1
 const int WINDOW_WIDTH=800,WINDOW_HEIGHT=600;
 const int WIDTH=WINDOW_WIDTH/TILE_SIZE, HEIGHT=WINDOW_HEIGHT/TILE_SIZE;
-const float RAD=8;
+const float RAD=4;
 
 const int TILES_PER_CLICK=5;
 const int COLORS_SIZE=7;
@@ -25,7 +25,6 @@ bool is_inside_circle(int mx, int my, int x, int y);
 bool get_new_tile(tile& lhs, const tile& rhs);
 SDL_Color blendColors(SDL_Color color1, SDL_Color color2, float t);
 vector<SDL_Color> get_gradients();
-float delta_time(Uint64 &last_tick_t);
 
 Uint64 last_tick_t=0;
 int color_ind=0;
@@ -95,12 +94,14 @@ int main(int argc, char **argv){
         SDL_SetRenderDrawColor(rend, 0, 0, 0, 255);
         SDL_RenderClear(rend);
 
-        auto delta=delta_time(last_tick_t);
         for(int i=0; i<HEIGHT; i++){
             for(int j=0; j<WIDTH; j++){
                 if(tile_map[i][j].state){
                     int offset=tile_map[i][j].speed;
-                    if(i+offset>=HEIGHT || (tile_map[i+offset][j].state && tile_map[i+offset][j+1].state && tile_map[i+offset][j-1].state)){
+                    while(i+offset>=HEIGHT || tile_map[i+offset][j].state)offset--;//when the i+offset touches an already placed cell it shrinks till the current cell caaannot touch it
+                    if(offset<=0)offset=1;//cap the offset
+
+                    if(i+offset>=HEIGHT || (tile_map[i+offset][j].state && tile_map[i+offset][j+1==WIDTH?j:j+1].state && tile_map[i+offset][j-1==WIDTH?j:j-1].state)){
                         get_new_tile(new_tile_map[i][j], tile_map[i][j]);
                         continue;
                     }
@@ -110,12 +111,12 @@ int main(int argc, char **argv){
                     }
                     else{
                         int dir=rand()%2==0?-1:1;
-                        if(0<=j+dir && j+dir<WIDTH && !tile_map[i+offset][j+dir].state){
+                        if(0<=j+dir&&j+dir<WIDTH && !tile_map[i+offset][j+dir].state){
                             is_placed=get_new_tile(new_tile_map[i+offset][j+dir], tile_map[i][j]);
                         }else{
                             dir=dir==-1?1:-1;
-                            if(0<=j+dir && j+dir<WIDTH && !tile_map[i+offset][j+dir].state){
-                                is_placed=get_new_tile(new_tile_map[i+offset][j+dir], tile_map[i][j]);is_placed=1;
+                            if(0<=j+dir&&j+dir<WIDTH && !tile_map[i+offset][j+dir].state){
+                                is_placed=get_new_tile(new_tile_map[i+offset][j+dir], tile_map[i][j]);
                             }
                         }
                     } 
@@ -164,33 +165,33 @@ void fill_tiles(vector<vector<tile>> &tiles, bool first){
 }
 SDL_Color blendColors(SDL_Color color1, SDL_Color color2, float t) {
     SDL_Color result;
-    result.r = (1 - t) * color1.r + t * color2.r;
-    result.g = (1 - t) * color1.g + t * color2.g;
-    result.b = (1 - t) * color1.b + t * color2.b;
-    result.a = 255; 
+    result.r=(1-t)*color1.r+t*color2.r;
+    result.g=(1-t)*color1.g+t*color2.g;
+    result.b=(1-t)*color1.b+t*color2.b;
+    result.a=255; 
     return result;
 }
 
 vector<SDL_Color> get_gradients(){
-    int colorsPerSection = 10; 
-    int totalColors = (COLORS_SIZE - 1) * colorsPerSection + 1;
+    int colorsPerSection=10; 
+    int totalColors=(COLORS_SIZE-1)*colorsPerSection+1;
     vector<SDL_Color> gradientRainbow(totalColors);
 
-    for (int i = 0; i < COLORS_SIZE - 1; ++i) {
-        for (int j = 0; j < colorsPerSection; ++j) {
-            float t = (float)j / (colorsPerSection - 1);
-            gradientRainbow[i * colorsPerSection + j] = blendColors(colors[i], colors[i + 1], t);
+    for (int i=0; i<COLORS_SIZE-1; ++i) {
+        for (int j=0; j<colorsPerSection; ++j) {
+            float t=(float)j/(colorsPerSection-1);
+            gradientRainbow[i*colorsPerSection+j]=blendColors(colors[i],colors[i+1],t);
         }
     }
-    gradientRainbow[totalColors - 1] = colors[COLORS_SIZE - 1];
+    gradientRainbow[totalColors-1]=colors[COLORS_SIZE-1];
 
     return gradientRainbow;
 }
 
 bool is_inside_circle(int mx, int my, int x, int y){
-    float eq=pow((x - mx), 2) + pow((y-my),2);
+    float eq=(float)pow((x-mx), 2)+(float)pow((y-my),2);
 
-    return eq==RAD||sqrt(eq)<=RAD;
+    return sqrt(eq)<=RAD;
 }
 
 bool get_new_tile(tile& lhs, const tile& rhs){
@@ -198,12 +199,4 @@ bool get_new_tile(tile& lhs, const tile& rhs){
     lhs.c=rhs.c;
     lhs.speed=rhs.speed;
     return 1;
-}
-
-float delta_time(Uint64 &last_tick_t){
-    Uint64 tick_t=SDL_GetPerformanceCounter();
-    float delta=(float)((tick_t-last_tick_t)*1000 / (float) SDL_GetPerformanceCounter());
-    last_tick_t=tick_t;
-
-    return delta;
 }
