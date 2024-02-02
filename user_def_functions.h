@@ -84,8 +84,3 @@ std::vector<SDL_Color> get_gradients(){
 
     return gradientRainbow;
 }
-
-
-void set_color(SDL_Renderer *rend, const SDL_Color &color){
-    SDL_SetRenderDrawColor(rend, color.r, color.g, color.b, color.a);
-}
