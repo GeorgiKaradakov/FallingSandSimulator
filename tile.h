@@ -35,7 +35,7 @@ bool get_new_tile(tile& lhs, const tile& rhs, bool stopped){
 void tile_move(std::vector<std::vector<tile>> &tile_map, std::vector<std::vector<tile>> &new_tile_map){
     for(int i=0; i<HEIGHT; i++){
         for(int j=0; j<WIDTH; j++){
-            if(tile_map[i][j].state==1){
+            if(tile_map[i][j].state){
                 int offset=tile_map[i][j].speed;
                 while(i+offset>=HEIGHT || tile_map[i+offset][j].state)offset--;//when the i+offset touches an already placed cell it shrinks till the current cell 
                                                                                 //cannot touch it
@@ -61,8 +61,9 @@ void tile_move(std::vector<std::vector<tile>> &tile_map, std::vector<std::vector
                         }
                     }
                 } 
-            }else if(tile_map[i][j].state==2){
-                get_new_tile(new_tile_map[i][j], tile_map[i][j], true);
+
+                if(!is_placed)//the tile has already found its place
+                    get_new_tile(new_tile_map[i][j], tile_map[i][j], true);
             }
         }
     }
