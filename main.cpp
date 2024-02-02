@@ -82,9 +82,12 @@ int main(int argc, char **argv){
 
             if(m_state&SDL_BUTTON(SDL_BUTTON_LEFT)){                
                 mx/=TILE_SIZE,my/=TILE_SIZE;
-                for(int i=my-TILES_PER_CLICK; i<=my+TILES_PER_CLICK; i++){
-                    for(int j=mx-TILES_PER_CLICK; j<=mx+TILES_PER_CLICK; j++){
-                        if(0<=j&&j<WIDTH&&0<=i&&i<HEIGHT){
+
+                int starti=my-TILES_PER_CLICK, startj=mx-TILES_PER_CLICK, endi=my+TILES_PER_CLICK, endj=mx+TILES_PER_CLICK;
+
+                for(int i=starti; i<=endi; i++){
+                    for(int j=startj; j<=endj; j++){
+                        if(0<=j&&j<WIDTH&&0<i&&i<HEIGHT){
                             if(is_inside_circle(mx, my, j, i)&&!tile_map[i][j].state){
                                 tile_map[i][j].state=1;
                                 tile_map[i][j].c=gradient_colors[color_ind%gradient_colors.size()];
@@ -137,6 +140,7 @@ int main(int argc, char **argv){
 
                     if(!is_placed)
                         get_new_tile(new_tile_map[i][j], tile_map[i][j]);
+                    // get_new_tile(new_tile_map[i][j], tile_map[i][j]);
                 }
             }
         }
