@@ -81,22 +81,24 @@ int main(int argc, char **argv){
             Uint32 m_state=SDL_GetMouseState(&mx, &my);
 
             if(m_state&SDL_BUTTON(SDL_BUTTON_LEFT)){                
-                mx/=TILE_SIZE,my/=TILE_SIZE;
+                if(0<=mx&&0<WINDOW_WIDTH && 0<=my&&my<WINDOW_HEIGHT){
+                    mx/=TILE_SIZE,my/=TILE_SIZE;
 
-                int starti=my-TILES_PER_CLICK, startj=mx-TILES_PER_CLICK, endi=my+TILES_PER_CLICK, endj=mx+TILES_PER_CLICK;
+                    int starti=my-TILES_PER_CLICK, startj=mx-TILES_PER_CLICK, endi=my+TILES_PER_CLICK, endj=mx+TILES_PER_CLICK;
 
-                for(int i=starti; i<=endi; i++){
-                    for(int j=startj; j<=endj; j++){
-                        if(0<=j&&j<WIDTH&&0<i&&i<HEIGHT){
-                            if(is_inside_circle(mx, my, j, i)&&!tile_map[i][j].state){
-                                tile_map[i][j].state=1;
-                                tile_map[i][j].c=gradient_colors[color_ind%gradient_colors.size()];
-                                tile_map[i][j].speed=rand()%5+4;
+                    for(int i=starti; i<=endi; i++){
+                        for(int j=startj; j<=endj; j++){
+                            if(0<=j&&j<WIDTH&&0<i&&i<HEIGHT){
+                                if(is_inside_circle(mx, my, j, i)&&!tile_map[i][j].state){
+                                    tile_map[i][j].state=1;
+                                    tile_map[i][j].c=gradient_colors[color_ind%gradient_colors.size()];
+                                    tile_map[i][j].speed=rand()%5+4;
+                                }
                             }
                         }
                     }
+                    if(!(color_cnt++%10))color_ind++;
                 }
-                if(!(color_cnt++%10))color_ind++;
             }
         }
 
