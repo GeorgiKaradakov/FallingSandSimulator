@@ -54,7 +54,9 @@ void proccess_events(std::vector<std::vector<tile>> &tile_map, std::vector<SDL_C
                         }
                     }
                 }
-                if(!(color_cnt++%10))color_ind++;
+                if(0<=mx&&mx<WIDTH && 0<=my&&my<HEIGHT)
+                    if(!(color_cnt++%10))
+                        color_ind++;
             }
         }
     }
